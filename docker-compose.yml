@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: python /code/manage.py runserver 0.0.0.0:8000
+#    command: python /code/main.py
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file: .env
+    networks:
+      - testnetwork
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_HOST_AUTH_METHOD=trust" # TODO: IMPORTANT! This is for development only <- DO NOT USE IN PRODUCTION!
+    networks:
+        - testnetwork
+networks:
+    testnetwork:
+        driver: bridge
