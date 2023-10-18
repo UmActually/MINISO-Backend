@@ -10,12 +10,12 @@ from .models import User
 from .serializers import UserSerializer
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def test(_request: Request) -> Response:
-    return Response({'message': 'Hello world!'}, status=status.HTTP_200_OK)
+    return Response({"message": "Hello world!"}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def create_user(request: Request) -> Response:
     """
     Crea un usuario (paciente).
@@ -37,7 +37,7 @@ def create_user(request: Request) -> Response:
 
     serializer.save()
 
-    return Response({'message': 'User created!'}, status=status.HTTP_201_CREATED)
+    return Response({"message": "User created!"}, status=status.HTTP_201_CREATED)
 
 
 class UserView(APIView):
@@ -49,7 +49,7 @@ class UserView(APIView):
 
     def put(self, request: Request, user_id: int) -> Response:
         """Actualiza un usuario en específico, dado el ID. Solo para administradores."""
-        if 'password' in request.data:
+        if "password" in request.data:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         user = get_object_or_404(User, id=user_id)

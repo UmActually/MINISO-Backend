@@ -4,7 +4,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 
-from django.shortcuts import get_object_or_404
+from django.db.models import Q
+
+from .models import HealthIndicator
+from .serializers import HealthIndicatorSerializer, CustomHealthIndicatorSerializer
 
 
 class HealthIndicatorsView(APIView):
@@ -21,13 +24,28 @@ class HealthIndicatorsView(APIView):
         - min (en caso de ser cuantitativo)
         - max (en caso de ser cuantitativo)
         """
-        return Response({'message': 'Health indicator created!'}, status=status.HTTP_201_CREATED)
+        data = request.data
+        serializer = HealthIndicatorSerializer(data=data, many=False)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+
+        return Response({"message": "Health indicator created!"}, status=status.HTTP_201_CREATED)
 
     def get(self, request: Request) -> Response:
-        return Response({'message': 'Health indicators'}, status=status.HTTP_200_OK)
+        """
+        Devuelve todos los indicadores de salud predeterminados,
+        más los custom del usuario.
+        """
+        indicators = HealthIndicator.objects.filter(
+            Q(added_by=None) | Q(added_by=request.user)
+        )
+        serializer = HealthIndicatorSerializer(indicators, many=True)
+        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def create_custom_health_indicator(request: Request) -> Response:
     """
     Crea un indicador de salud custom.
@@ -41,10 +59,20 @@ def create_custom_health_indicator(request: Request) -> Response:
     - min (en caso de ser cuantitativo)
     - max (en caso de ser cuantitativo)
     """
-    return Response({'message': 'Custom health indicator created!'}, status=status.HTTP_201_CREATED)
+    data = request.data
+    serializer = CustomHealthIndicatorSerializer(data=data, many=False)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer.save()
+    
+    return Response({"message": "Custom health indicator created!"}, status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def get_suggested_health_indicators(request: Request) -> Response:
     """Devuelve una lista breve de indicadores de salud sugeridos para un usuario."""
-    return Response({'message': 'Suggested health indicators'}, status=status.HTTP_200_OK)
+    
+    # TODO: tomar los 4 indicadores más frecuentes para el usuario
+    
+    return Response({"message": "Suggested health indicators"}, status=status.HTTP_200_OK)

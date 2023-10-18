@@ -8,7 +8,7 @@ class HealthIndicator(models.Model):
     is_cuantitative = models.BooleanField(null=False)
     is_decimal = models.BooleanField(null=False)
     added_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    unit_of_measurement = models.CharField(max_length=16, null=False)
+    unit_of_measurement = models.CharField(max_length=16, blank=True, null=True)
     min = models.FloatField(null=False)
     max = models.FloatField(null=False)
 
