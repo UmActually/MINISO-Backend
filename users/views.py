@@ -3,7 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
+
 from django.shortcuts import get_object_or_404
+
 from .models import User
 from .serializers import UserSerializer
 
@@ -43,11 +45,11 @@ class UserView(APIView):
         """Devuelve un usuario en específico, dado el ID. Solo para administradores."""
         user = get_object_or_404(User, id=user_id)
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request: Request, user_id: int) -> Response:
         """Actualiza un usuario en específico, dado el ID. Solo para administradores."""
-        if 'password' in request.data or 'role' in request.data:
+        if 'password' in request.data:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         user = get_object_or_404(User, id=user_id)
@@ -58,4 +60,10 @@ class UserView(APIView):
         updated_user = serializer.save()
 
         resp_serializer = UserSerializer(updated_user)
-        return Response(resp_serializer.data)
+        return Response(resp_serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, _request: Request, user_id: int) -> Response:
+        """Elimina un usuario en específico, dado el ID. Solo para administradores."""
+        user = get_object_or_404(User, id=user_id)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
