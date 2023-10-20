@@ -1,8 +1,9 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from django.db.models import Q
 
@@ -11,9 +12,14 @@ from .serializers import HealthIndicatorSerializer, CustomHealthIndicatorSeriali
 
 
 class HealthIndicatorsView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
     def post(self, request: Request) -> Response:
         """
-        Crea un indicador de salud (no custom).
+        Crea un indicador de salud (no custom). Solo para administradores.
 
         Campos:
         - name
@@ -42,10 +48,11 @@ class HealthIndicatorsView(APIView):
             Q(added_by=None) | Q(added_by=request.user)
         )
         serializer = HealthIndicatorSerializer(indicators, many=True)
-        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_custom_health_indicator(request: Request) -> Response:
     """
     Crea un indicador de salud custom.
@@ -64,7 +71,13 @@ def create_custom_health_indicator(request: Request) -> Response:
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    serializer.save()
+    serializer.save(
+        is_cuantitative=False,
+        is_decimal=False,
+        added_by=request.user,
+        min=1,
+        max=10,
+    )
     
     return Response({"message": "Custom health indicator created!"}, status=status.HTTP_201_CREATED)
 

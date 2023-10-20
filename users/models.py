@@ -15,6 +15,12 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
+
+        extra_fields.setdefault("first_names", "Alan")
+        extra_fields.setdefault("last_names", "Turing")
+        extra_fields.setdefault("birth_date", "1912-06-23")
+        extra_fields.setdefault("height", 1.78)
+
         return self.create_user(email, password, **extra_fields)
 
 
