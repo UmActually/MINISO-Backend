@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 
 from django.db.models import Q
 
+from users.permissions import IsPatient, IsAdmin
 from .models import HealthIndicator
 from .serializers import HealthIndicatorSerializer, CustomHealthIndicatorSerializer
 
@@ -14,7 +15,7 @@ from .serializers import HealthIndicatorSerializer, CustomHealthIndicatorSeriali
 class HealthIndicatorsView(APIView):
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAdminUser()]
+            return [IsAdmin()]
         return [IsAuthenticated()]
 
     def post(self, request: Request) -> Response:
@@ -56,33 +57,29 @@ class HealthIndicatorsView(APIView):
 def create_custom_health_indicator(request: Request) -> Response:
     """
     Crea un indicador de salud custom.
-    TODO: Ver si podremos permitir que los custom sean cuantitativos.
 
     Campos:
     - name
-    - is_cuantitative
-    - is_decimal (en caso de ser cuantitativo)
-    - unit_of_measurement (en caso de ser cuantitativo)
-    - min (en caso de ser cuantitativo)
-    - max (en caso de ser cuantitativo)
     """
     data = request.data
     serializer = CustomHealthIndicatorSerializer(data=data, many=False)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    serializer.save(
+    new_indicator = serializer.save(
         is_cuantitative=False,
         is_decimal=False,
         added_by=request.user,
         min=1,
         max=10,
     )
-    
-    return Response({"message": "Custom health indicator created!"}, status=status.HTTP_201_CREATED)
+
+    resp_serializer = HealthIndicatorSerializer(new_indicator, many=False)
+    return Response(resp_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
+@permission_classes([IsPatient])
 def get_suggested_health_indicators(request: Request) -> Response:
     """Devuelve una lista breve de indicadores de salud sugeridos para un usuario."""
     

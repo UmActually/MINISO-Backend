@@ -2,15 +2,16 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 
 from django.shortcuts import get_object_or_404
 
 from users.models import User
+from users.permissions import IsAdmin
 from indicators.models import HealthIndicator
 from .models import HealthRecord
-from .serializers import HealthRecordSerializer, HealthRecordInputSerializer
+from .serializers import HealthRecordSerializer, HealthRecordDeserializer
 
 
 @api_view(["POST"])
@@ -25,34 +26,11 @@ def create_health_record(request: Request) -> Response:
     - note (opcional)
     """
     data = request.data
-    serializer = HealthRecordInputSerializer(data=data)
+    serializer = HealthRecordDeserializer(data=data, context={"request": request})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    validated_data = serializer.validated_data
-    health_indicator_id = validated_data["health_indicator_id"]
-
-    # Validar que el indicador exista
-    health_indicator = get_object_or_404(HealthIndicator, id=health_indicator_id)
-
-    # Validar que el usuario tenga permiso para agregar registros de este indicador
-    if health_indicator.is_custom and health_indicator.added_by != request.user:
-        return Response(
-            {"message": "You can't add records to this indicator"},
-            status=status.HTTP_403_FORBIDDEN)
-
-    # Validar que el valor esté dentro del rango
-    value = validated_data["value"]
-    if not (health_indicator.min <= value <= health_indicator.max):
-        return Response(
-            {"message": "Value out of range"},
-            status=status.HTTP_400_BAD_REQUEST)
-
-    HealthRecord.objects.create(
-        user=request.user,
-        health_indicator=health_indicator,
-        **validated_data
-    )
+    serializer.save()
 
     return Response({"message": "Health record created!"}, status=status.HTTP_201_CREATED)
 
@@ -74,7 +52,7 @@ def get_my_history(request: Request) -> Response:
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdmin])
 def get_user_history(request: Request, user_id: int) -> Response:
     """Devuelve el historial médico de un usuario en específico."""
     user = get_object_or_404(User, id=user_id)
@@ -82,7 +60,7 @@ def get_user_history(request: Request, user_id: int) -> Response:
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdmin])
 def get_user_summary(request: Request, user_id: int) -> Response:
     """Devuelve un resumen del historial médico de un usuario en específico."""
 
