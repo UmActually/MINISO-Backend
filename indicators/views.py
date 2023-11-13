@@ -36,9 +36,10 @@ class HealthIndicatorsView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer.save()
+        new_indicator = serializer.save()
 
-        return Response({"message": "Health indicator created!"}, status=status.HTTP_201_CREATED)
+        resp_serializer = HealthIndicatorSerializer(new_indicator)
+        return Response(resp_serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request: Request) -> Response:
         """
@@ -49,7 +50,7 @@ class HealthIndicatorsView(APIView):
             Q(added_by=None) | Q(added_by=request.user)
         )
         serializer = HealthIndicatorSerializer(indicators, many=True)
-        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])

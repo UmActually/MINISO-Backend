@@ -2,13 +2,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 
 from django.shortcuts import get_object_or_404
 
-from users.models import User
-from users.permissions import IsPatient, IsAdmin
+from users.models import User, UserRole
+from users.permissions import IsPatient, IsAdminOrDoctor
 from .models import HealthRecord
 from .serializers import group_records_by_date, HealthRecordDeserializer
 
@@ -57,24 +56,35 @@ def handle_get_history(user: User, request: Request) -> Response:
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsPatient])
 def get_my_history(request: Request) -> Response:
     """Devuelve el historial médico del usuario actual."""
     return handle_get_history(request.user, request)
 
 
 @api_view(["GET"])
-@permission_classes([IsAdmin])
+@permission_classes([IsAdminOrDoctor])
 def get_user_history(request: Request, user_id: int) -> Response:
     """Devuelve el historial médico de un usuario en específico."""
-    user = get_object_or_404(User, id=user_id)
-    return handle_get_history(user, request)
+    user = request.user
+    patient = get_object_or_404(User, id=user_id)
+    if user.role == UserRole.DOCTOR and patient.doctor != user:
+        return Response(
+            {"message": "You can't access this user's health record"},
+            status=status.HTTP_403_FORBIDDEN)
+    return handle_get_history(patient, request)
 
 
 @api_view(["GET"])
-@permission_classes([IsAdmin])
+@permission_classes([IsAdminOrDoctor])
 def get_user_summary(request: Request, user_id: int) -> Response:
     """Devuelve un resumen del historial médico de un usuario en específico."""
+    user = request.user
+    patient = get_object_or_404(User, id=user_id)
+    if user.role == UserRole.DOCTOR and patient.doctor != user:
+        return Response(
+            {"message": "You can't access this user's health record"},
+            status=status.HTTP_403_FORBIDDEN)
 
     # TODO: Implementar con lo que necesite el cliente
 

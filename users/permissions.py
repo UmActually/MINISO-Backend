@@ -30,3 +30,11 @@ class IsAdmin(BasePermission):
     def has_permission(self, request: Request, view):
         return user_exists_in_db(request) and \
             (request.user.role == UserRole.ADMIN or request.user.is_staff)
+
+
+class IsAdminOrDoctor(BasePermission):
+    def has_permission(self, request: Request, view):
+        return user_exists_in_db(request) and \
+            (request.user.role == UserRole.ADMIN or
+             request.user.role == UserRole.DOCTOR or
+             request.user.is_staff)
