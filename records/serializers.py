@@ -1,13 +1,51 @@
+import pytz
+
 from rest_framework import serializers
 
 from indicators.models import HealthIndicator
+from indicators.serializers import HealthIndicatorSerializer
 from .models import HealthRecord
 
 
+MEXICO_TIME_ZONE = pytz.timezone("Mexico/General")
+
+
 class HealthRecordSerializer(serializers.ModelSerializer):
+    health_indicator = HealthIndicatorSerializer()
+
     class Meta:
         model = HealthRecord
         fields = "__all__"
+
+
+def group_records_by_date(health_records):
+    records_by_day = []
+    current_day = 0
+    for record in health_records:
+        day = record.date.astimezone(MEXICO_TIME_ZONE).day
+        if day != current_day:
+            current_day = day
+            records_by_day.append([record])
+        else:
+            records_by_day[-1].append(record)
+
+    return [
+        HealthRecordSerializer(records, many=True).data
+        for records in records_by_day
+    ]
+
+
+# def to_representation(self, instance):
+#     # Agrupar los registros por día
+#     records_by_day = {}
+#     for record in instance["health_records"]:
+#         records_by_day.setdefault(record.date, []).append(record)
+#
+#     # Serializar cada grupo
+#     return [
+#         HealthRecordSerializer(records, many=True).data
+#         for records in records_by_day.values()
+#     ]
 
 
 class HealthRecordDeserializer(serializers.Serializer):

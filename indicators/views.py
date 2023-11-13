@@ -9,7 +9,7 @@ from django.db.models import Q
 
 from users.permissions import IsPatient, IsAdmin
 from .models import HealthIndicator
-from .serializers import HealthIndicatorSerializer, CustomHealthIndicatorSerializer
+from .serializers import HealthIndicatorSerializer, HealthIndicatorDeserializer, CustomHealthIndicatorDeserializer
 
 
 class HealthIndicatorsView(APIView):
@@ -27,12 +27,12 @@ class HealthIndicatorsView(APIView):
         - medical_name (opcional)
         - is_cuantitative
         - is_decimal (en caso de ser cuantitativo)
-        - unit_of_measurement (en caso de ser cuantitativo)
         - min (en caso de ser cuantitativo)
         - max (en caso de ser cuantitativo)
+        - unit_of_measurement (opcional, en caso de ser cuantitativo)
         """
         data = request.data
-        serializer = HealthIndicatorSerializer(data=data, many=False)
+        serializer = HealthIndicatorDeserializer(data=data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -53,7 +53,7 @@ class HealthIndicatorsView(APIView):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsPatient])
 def create_custom_health_indicator(request: Request) -> Response:
     """
     Crea un indicador de salud custom.
@@ -62,19 +62,13 @@ def create_custom_health_indicator(request: Request) -> Response:
     - name
     """
     data = request.data
-    serializer = CustomHealthIndicatorSerializer(data=data, many=False)
+    serializer = CustomHealthIndicatorDeserializer(data=data, context={"request": request})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    new_indicator = serializer.save(
-        is_cuantitative=False,
-        is_decimal=False,
-        added_by=request.user,
-        min=1,
-        max=10,
-    )
+    new_indicator = serializer.save()
 
-    resp_serializer = HealthIndicatorSerializer(new_indicator, many=False)
+    resp_serializer = HealthIndicatorSerializer(new_indicator)
     return Response(resp_serializer.data, status=status.HTTP_201_CREATED)
 
 
