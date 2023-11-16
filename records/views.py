@@ -1,3 +1,6 @@
+import datetime
+import pytz
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -9,7 +12,10 @@ from django.shortcuts import get_object_or_404
 from users.models import User, UserRole
 from users.permissions import IsPatient, IsAdminOrDoctor
 from .models import HealthRecord
-from .serializers import group_records_by_date, HealthRecordDeserializer
+from .serializers import group_records_by_date, HealthRecordMinimalSerializer, HealthRecordDeserializer
+
+
+MEXICO_TIME_ZONE = pytz.timezone("Mexico/General")
 
 
 @api_view(["POST"])
@@ -73,6 +79,23 @@ def get_user_history(request: Request, user_id: int) -> Response:
             {"message": "You can't access this user's health record"},
             status=status.HTTP_403_FORBIDDEN)
     return handle_get_history(patient, request)
+
+
+@api_view(["GET"])
+@permission_classes([IsPatient])
+def get_my_indicator_history(request: Request, indicator_id: int) -> Response:
+    """Devuelve el historial médico de un indicador en específico del usuario actual."""
+    records = HealthRecord.objects.filter(
+        user=request.user, health_indicator_id=indicator_id).order_by('-date')
+    current_month_count = records.filter(
+        date__month=datetime.datetime.now().astimezone(MEXICO_TIME_ZONE).month).count()
+    paginator = PageNumberPagination()
+    paginator.page_size = 10
+    page = paginator.paginate_queryset(records, request)
+    serializer = HealthRecordMinimalSerializer(page, many=True)
+    resp = paginator.get_paginated_response(serializer.data)
+    resp.data["current_month_count"] = current_month_count
+    return resp
 
 
 @api_view(["GET"])

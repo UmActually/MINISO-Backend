@@ -18,6 +18,13 @@ class HealthRecordSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class HealthRecordMinimalSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    date = serializers.DateTimeField()
+    value = serializers.FloatField()
+    note = serializers.CharField()
+
+
 def group_records_by_date(health_records):
     records_by_day = []
     current_day = 0
