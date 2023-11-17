@@ -39,6 +39,30 @@ def create_health_record(request: Request) -> Response:
     return Response({"message": "Health record created!"}, status=status.HTTP_201_CREATED)
 
 
+@api_view(["POST"])
+@permission_classes([IsPatient])
+def bulk_create_health_records(request: Request) -> Response:
+    """
+    Crea varios registros a la vez.
+
+    Campos (en formato de lista):
+    - health_indicator_id
+    - value
+    - note (opcional)
+    """
+    data = request.data
+    serializer = HealthRecordDeserializer(data=data, many=True, context={"request": request})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    records = []
+    for kwargs in serializer.validated_data:
+        records.append(HealthRecord(user=request.user, **kwargs))
+
+    HealthRecord.objects.bulk_create(records)
+    return Response({"message": "Health records created!"}, status=status.HTTP_201_CREATED)
+
+
 @api_view(["DELETE"])
 @permission_classes([IsPatient])
 def delete_health_record(request: Request, record_id: int) -> Response:

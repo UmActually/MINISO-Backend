@@ -1,3 +1,4 @@
+import datetime
 import pytz
 
 from rest_framework import serializers
@@ -60,6 +61,9 @@ class HealthRecordDeserializer(serializers.Serializer):
     value = serializers.FloatField(required=True)
     note = serializers.CharField(required=False, allow_blank=True)
 
+    # TODO: Esto es solo para pruebas, quitarlo después
+    date = serializers.DateTimeField(required=False)
+
     def validate(self, attrs):
         # Validar que el indicador exista
         health_indicator_id = attrs["health_indicator_id"]
@@ -80,7 +84,11 @@ class HealthRecordDeserializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
+        date = validated_data.pop(
+            "date",
+            datetime.datetime.now().astimezone(MEXICO_TIME_ZONE))
         return HealthRecord.objects.create(
             user=self.context["request"].user,
+            date=date,
             **validated_data
         )

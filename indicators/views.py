@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -5,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models import Q
 
 from users.permissions import IsPatient, IsAdmin
@@ -51,6 +54,47 @@ class HealthIndicatorsView(APIView):
         )
         serializer = HealthIndicatorSerializer(indicators, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAdmin])
+def bulk_create_health_indicators(request: Request) -> Response:
+    """
+    Crea varios indicadores de salud (no custom) a partir de un archivo CSV.
+    Solo para administradores.
+    """
+    file: InMemoryUploadedFile = request.FILES.get("file")
+    if not file:
+        return Response({"message": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def evaluate(expression: str) -> Any:
+        if expression.isdigit():
+            return int(expression)
+        if expression.isnumeric():
+            return float(expression)
+        if expression == "TRUE":
+            return True
+        if expression == "FALSE":
+            return False
+        return expression
+
+    content = file.read().decode("utf-8")
+    csv_lines = content.split("\r\n")
+    indicators = []
+
+    headers = csv_lines.pop(0).split(",")
+    for row in csv_lines:
+        kwargs = {
+            key: evaluate(value)
+            for key, value in zip(headers, row.split(",")) if value
+        }
+        kwargs.setdefault("is_decimal", False)
+        kwargs.setdefault("min", 1)
+        kwargs.setdefault("max", 10)
+        indicators.append(HealthIndicator(**kwargs))
+
+    HealthIndicator.objects.bulk_create(indicators)
+    return Response({"message": "Health indicators created"}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])

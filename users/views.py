@@ -47,6 +47,7 @@ def create_patient(request: Request) -> Response:
 
     return Response({
         "message": "User created!",
+        "id": new_user.id,
         "token": str(AccessToken.for_user(new_user))
     }, status=status.HTTP_201_CREATED)
 
@@ -73,6 +74,7 @@ def create_doctor(request: Request) -> Response:
 
     return Response({
         "message": "User created!",
+        "id": new_user.id,
         "token": str(AccessToken.for_user(new_user))
     }, status=status.HTTP_201_CREATED)
 
