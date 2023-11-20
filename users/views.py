@@ -16,7 +16,7 @@ from .permissions import IsAdmin
 @api_view(["GET"])
 def test(request: Request) -> Response:
     """Endpoint de prueba."""
-    return Response({"message": "hola, "}, status=status.HTTP_200_OK)
+    return Response({"message": "ola"}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
