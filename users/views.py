@@ -14,12 +14,9 @@ from .permissions import IsAdmin
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def test(request: Request) -> Response:
     """Endpoint de prueba."""
-    user = request.user
-    serializer = UserSerializer(user)
-    return Response({"user": serializer.data}, status=status.HTTP_200_OK)
+    return Response({"message": "hola, "}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])

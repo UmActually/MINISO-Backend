@@ -40,7 +40,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "localhost",
-    "10.14.255.92"
+    "10.14.255.92",
+    "umm-actually.com",
+    "www.umm-actually.com",
+    "3.140.238.171"
 ]
 
 
