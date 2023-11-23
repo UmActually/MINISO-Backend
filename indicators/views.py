@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db.models import Q
+from django.db.models import Count, Q
 
 from users.permissions import IsPatient, IsAdmin
 from .models import HealthIndicator
@@ -121,7 +121,10 @@ def create_custom_health_indicator(request: Request) -> Response:
 @permission_classes([IsPatient])
 def get_suggested_health_indicators(request: Request) -> Response:
     """Devuelve una lista breve de indicadores de salud sugeridos para un usuario."""
-    
-    # TODO: tomar los 4 indicadores más frecuentes para el usuario
-    
-    return Response({"message": "Suggested health indicators"}, status=status.HTTP_200_OK)
+
+    indicators = HealthIndicator.objects.annotate(
+        count=Count("records", filter=Q(records__user_id=request.user.id))
+    ).order_by("-count")[:4]
+
+    serializer = HealthIndicatorSerializer(indicators, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
