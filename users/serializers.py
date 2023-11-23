@@ -18,15 +18,23 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_fields(self):
         fields = super(UserSerializer, self).get_fields()
-        user = self.instance
-
-        if user.role != UserRole.PATIENT:
-            fields.pop("birth_date")
-            fields.pop("height")
-            fields.pop("medical_history")
-            fields.pop("doctor")
+        try:
+            user = self.instance
+            if user.role != UserRole.PATIENT:
+                fields.pop("birth_date")
+                fields.pop("height")
+                fields.pop("medical_history")
+                fields.pop("doctor")
+        except AttributeError:
+            pass
 
         return fields
+
+
+class UserMinimalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "email", "first_names", "last_names", "phone_number")
 
 
 class PatientDeserializer(serializers.Serializer):

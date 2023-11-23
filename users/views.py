@@ -9,8 +9,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import User
-from .serializers import UserSerializer, PatientDeserializer, DoctorDeserializer
-from .permissions import IsAdmin
+from .serializers import UserSerializer, UserMinimalSerializer, PatientDeserializer, DoctorDeserializer
+from .permissions import IsDoctor, IsAdmin
 
 
 @api_view(["GET"])
@@ -123,3 +123,13 @@ class CurrentUserView(APIView):
     def put(self, request: Request) -> Response:
         """Actualiza el usuario autenticado."""
         return handle_put_user(request.user, request)
+
+
+@api_view(["GET"])
+@permission_classes([IsDoctor])
+def get_doctor_patients(request: Request) -> Response:
+    """Devuelve los pacientes del doctor autenticado."""
+    doctor = request.user
+    patients = User.objects.filter(doctor=doctor)
+    serializer = UserMinimalSerializer(patients, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
