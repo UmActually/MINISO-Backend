@@ -57,7 +57,8 @@ def bulk_create_health_records(request: Request) -> Response:
 
     records = []
     for kwargs in serializer.validated_data:
-        records.append(HealthRecord(user=request.user, **kwargs))
+        date = kwargs.pop("date", datetime.datetime.now().astimezone(MEXICO_TIME_ZONE))
+        records.append(HealthRecord(user=request.user, date=date, **kwargs))
 
     HealthRecord.objects.bulk_create(records)
     return Response({"message": "Health records created!"}, status=status.HTTP_201_CREATED)
