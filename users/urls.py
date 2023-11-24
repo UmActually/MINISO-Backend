@@ -10,5 +10,6 @@ urlpatterns = [
     path("users/doctors/", views.create_doctor),
     path("users/<int:user_id>/", views.UserView.as_view()),
     path("me/", views.CurrentUserView.as_view()),
+    path("me/doctor/", views.get_patient_doctor),
     path("me/patients/", views.get_doctor_patients),
 ]

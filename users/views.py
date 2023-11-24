@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import User
 from .serializers import UserSerializer, UserMinimalSerializer, PatientDeserializer, DoctorDeserializer
-from .permissions import IsDoctor, IsAdmin
+from .permissions import IsPatient, IsDoctor, IsAdmin
 
 
 @api_view(["GET"])
@@ -123,6 +123,14 @@ class CurrentUserView(APIView):
     def put(self, request: Request) -> Response:
         """Actualiza el usuario autenticado."""
         return handle_put_user(request.user, request)
+
+
+@api_view(["GET"])
+@permission_classes([IsPatient])
+def get_patient_doctor(request: Request) -> Response:
+    """Devuelve el doctor del paciente autenticado."""
+    serializer = UserMinimalSerializer(request.user.doctor)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
