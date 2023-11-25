@@ -51,7 +51,7 @@ class HealthIndicatorsView(APIView):
         """
         indicators = HealthIndicator.objects.filter(
             Q(added_by=None) | Q(added_by=request.user)
-        ).order_by("added_by")
+        ).order_by("added_by", "id")
         serializer = HealthIndicatorSerializer(indicators, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
