@@ -147,7 +147,7 @@ class CurrentUserView(APIView):
 @permission_classes([IsPatient])
 def get_patient_doctor(request: Request) -> Response:
     """Devuelve el doctor del paciente autenticado."""
-    serializer = UserMinimalSerializer(request.user.doctor)
+    serializer = UserSerializer(request.user.doctor)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
