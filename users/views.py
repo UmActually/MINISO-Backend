@@ -9,14 +9,32 @@ from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import AccessToken
 
 from .models import User
-from .serializers import UserSerializer, UserMinimalSerializer, PatientDeserializer, DoctorDeserializer
+from .serializers import \
+    UserSerializer, UserMinimalSerializer, PatientDeserializer, DoctorDeserializer, \
+    CustomTokenSerializer
 from .permissions import IsPatient, IsDoctor, IsAdmin
 
 
 @api_view(["GET"])
 def test(request: Request) -> Response:
     """Endpoint de prueba."""
-    return Response({"message": "ola"}, status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def login(request: Request) -> Response:
+    """
+    Inicia sesión.
+
+    Campos:
+    - email
+    - password
+    """
+    serializer = CustomTokenSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])

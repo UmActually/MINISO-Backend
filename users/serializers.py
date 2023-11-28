@@ -1,5 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, UserRole
 
 
@@ -80,3 +81,10 @@ class DoctorDeserializer(serializers.Serializer):
     def create(self, validated_data):
         validated_data["password"] = make_password(validated_data["password"])
         return User.objects.create(role=UserRole.DOCTOR, **validated_data)
+
+
+class CustomTokenSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super(CustomTokenSerializer, self).validate(attrs)
+        data["role"] = self.user.role
+        return data
