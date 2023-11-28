@@ -106,21 +106,38 @@ def get_user_history(request: Request, user_id: int) -> Response:
     return handle_get_history(patient, request)
 
 
-@api_view(["GET"])
-@permission_classes([IsPatient])
-def get_my_indicator_history(request: Request, indicator_id: int) -> Response:
-    """Devuelve el historial médico de un indicador en específico del usuario actual."""
+def handle_get_indicator_history(user: User, indicator_id: int, request: Request) -> Response:
     records = HealthRecord.objects.filter(
-        user=request.user, health_indicator_id=indicator_id).order_by('-date')
+        user=user, health_indicator_id=indicator_id).order_by('-date')
     current_month_count = records.filter(
         date__month=datetime.datetime.now().astimezone(MEXICO_TIME_ZONE).month).count()
     paginator = PageNumberPagination()
-    paginator.page_size = 10
+    paginator.page_size = 50
     page = paginator.paginate_queryset(records, request)
     serializer = HealthRecordMinimalSerializer(page, many=True)
     resp = paginator.get_paginated_response(serializer.data)
     resp.data["current_month_count"] = current_month_count
     return resp
+
+
+@api_view(["GET"])
+@permission_classes([IsPatient])
+def get_my_indicator_history(request: Request, indicator_id: int) -> Response:
+    """Devuelve el historial médico de un indicador en específico del usuario actual."""
+    return handle_get_indicator_history(request.user, indicator_id, request)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminOrDoctor])
+def get_user_indicator_history(request: Request, user_id: int, indicator_id: int) -> Response:
+    """Devuelve el historial médico de un indicador en específico de un usuario en específico."""
+    user = request.user
+    patient = get_object_or_404(User, id=user_id)
+    if user.role == UserRole.DOCTOR and patient.doctor != user:
+        return Response(
+            {"message": "You can't access this user's health record"},
+            status=status.HTTP_403_FORBIDDEN)
+    return handle_get_indicator_history(patient, indicator_id, request)
 
 
 @api_view(["GET"])
