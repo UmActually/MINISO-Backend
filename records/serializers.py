@@ -23,6 +23,7 @@ class HealthRecordMinimalSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     date = serializers.DateTimeField()
     value = serializers.FloatField()
+    alt_value = serializers.FloatField()
     note = serializers.CharField()
 
 
@@ -59,6 +60,7 @@ def group_records_by_date(health_records):
 class HealthRecordDeserializer(serializers.Serializer):
     health_indicator_id = serializers.IntegerField(required=True)
     value = serializers.FloatField(required=True)
+    alt_value = serializers.FloatField(required=False, allow_null=True)
     note = serializers.CharField(required=False, allow_blank=True)
 
     # TODO: Esto es solo para pruebas, quitarlo después

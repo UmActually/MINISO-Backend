@@ -8,6 +8,7 @@ class HealthRecord(models.Model):
     health_indicator = models.ForeignKey(HealthIndicator, on_delete=models.CASCADE, null=False, related_name="records")
     date = models.DateTimeField(null=False)
     value = models.FloatField(null=False)
+    alt_value = models.FloatField(null=True)
     note = models.TextField(blank=True, null=True)
 
     def __str__(self) -> str:
